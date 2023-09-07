@@ -1,17 +1,25 @@
-:partner-solution-project-name: partner-solution-repo-name
-:partner-solution-github-org: aws-quickstart
-:partner-product-name: Full Product Name
-:partner-product-short-name: Product Name
-:partner-company-name: Example Company Name, Ltd.
-:doc-month: January
+:partner-solution-project-name: cfn-ps-vmware-tanzu-application-platform
+:partner-solution-github-org: aws-ia
+:partner-company-short-name: VMware
+:partner-product-family: Tanzu
+:partner-product-family-full: {partner-company-short-name} {partner-product-family}
+:partner-product-short-name: {partner-product-family} Application Platform
+:partner-product-name: {partner-company-short-name} {partner-product-short-name}
+:partner-product-acronym: TAP
+:partner-product-version-major: 1
+:partner-product-version-minor: 5
+:partner-product-version-patch: 2
+:partner-product-version-majmin: {partner-product-version-major}.{partner-product-version-minor}
+:partner-product-version: {partner-product-version-majmin}.{partner-product-version-patch}
+:partner-company-name: VMware, Inc.
+:partner-registry: {partner-product-family-full} Network
+:doc-month: June
 :doc-year: 2023
-:partner-contributors: John Smith, {partner-company-name}
+:partner-contributors: Stephani LeClaire, Siteng Yu, and Hannes Hörl {partner-company-name}
 // :other-contributors: Akua Mansa, Trek10
-:aws-contributors: Janine Singh, AWS IoT Partner team
-:aws-ia-contributors: Toni Jones, AWS Integration & Automation team
-:deployment_time: 15 minutes
+:aws-contributors: Elvis Pappachen, AWS VMware Partner team
+:aws-ia-contributors: Troy Lindsay, AWS Integration & Automation team
+:deployment_time: 1 hour
 :default_deployment_region: us-east-1
 // :private_repo:
-
-
-// For instructions on creating this deployment guide, refer to "Build your AWS Partner Solution documentation" (https://aws-ia-us-west-2.s3.us-west-2.amazonaws.com/docs/content/index.html#/).
+:eks-version: 1.24
