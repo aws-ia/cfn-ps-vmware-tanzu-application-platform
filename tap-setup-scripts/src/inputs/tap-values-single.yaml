@@ -1,0 +1,72 @@
+#@ load("@ytt:data", "data")
+---
+profile: full
+ceip_policy_disclosed: true # Installation fails if this is set to 'false'
+buildservice:
+  kp_default_repository: #@ data.values.repositories.build_service
+  kp_default_repository_aws_iam_role_arn: #@ data.values.buildservice.build_cluster_arn
+
+supply_chain: testing_scanning
+
+ootb_templates:
+  iaas_auth: true
+
+ootb_supply_chain_testing_scanning:
+  registry:
+    server: #@ data.values.repositories.workload.server
+    repository: #@ data.values.repositories.workload.ootb_repo_prefix
+  gitops:
+    ssh_secret: ""
+
+learningcenter:
+  ingressDomain: #@ "learning-center.{}".format(data.values.dns.domain_name)
+
+ootb_delivery_basic:
+  service_account: default
+
+tap_gui:
+  ingressEnabled: true
+  ingressDomain: #@ data.values.dns.domain_name
+  service_type: ClusterIP # NodePort for distributions that don't support LoadBalancer
+  app_config:
+    proxy:
+      /metadata-store:
+        target: https://metadata-store-app.metadata-store:8443/api/v1
+        changeOrigin: true
+        secure: false
+        headers:
+          Authorization: #@ "{}".format(data.values.metadata_store.access_token)
+          X-Custom-Source: project-star
+    supplyChain:
+      enablePlugin: true
+    auth:
+      allowGuestAccess: true
+    backend:
+      baseUrl: #@ "https://tap-gui.{}".format(data.values.dns.domain_name)
+      cors:
+        origin: #@ "https://tap-gui.{}".format(data.values.dns.domain_name)
+    app:
+      baseUrl: #@ "https://tap-gui.{}".format(data.values.dns.domain_name)
+
+metadata_store:
+  ns_for_export_app_cert: #@ data.values.repositories.workload.namespace
+
+contour:
+  infrastructure_provider: aws
+  envoy:
+    service:
+      aws:
+        LBType: nlb
+
+cnrs:
+  domain_name: #@ data.values.dns.domain_name
+
+grype:
+  namespace: #@ data.values.repositories.workload.namespace
+
+scanning:
+  metadataStore:
+    url: "" # Disable embedded integration since it's deprecated
+
+image_policy_webhook:
+  allow_unmatched_tags: true
