@@ -1,3 +1,206 @@
 // Include any postdeployment steps here, such as steps necessary to test that the deployment was successful. If there are no postdeployment steps, leave this file empty.
+=== Parameter reference
+
+==== Parameters for deploying a {partner-product-short-name} cluster to a new VPC
+
+[%autowidth.stretch]
+.{partner-registry} configuration
+|====
+|Parameter |Parameter Label |Default Value |Description
+
+|`AcceptEULAs`
+|Have all applicable {partner-registry} EULAs been accepted?
+|`No`
+|Choose `Yes` if you already accepted the https://network.tanzu.vmware.com/products/tanzu-cluster-essentials/[Cluster Essentials for {partner-product-family-full}^] and https://network.tanzu.vmware.com/products/tanzu-application-platform/[{partner-product-name}^] EULAs. {partner-product-acronym} will fail to install if both EULAs are not accepted for the specified {partner-registry} user account.
+
+|`AcceptCEIP`
+|Have you read and accepted the {partner-company-short-name} CEIP policy?
+|`No`
+|Choose `Yes` if you have read and accepted the https://www.vmware.com/solutions/trustvmware/ceip.html[{partner-company-short-name} CEIP policy^].
+
+|`TanzuNetUsername`
+|Username
+|
+|{partner-registry} user name. To create an account, sign up at https://account.run.pivotal.io/z/uaa/sign-up.
+
+|`TanzuNetPassword`
+|Password
+|
+|{partner-registry} password.
+
+|`TanzuApiToken`
+|API Token
+|
+|{partner-registry} UAA API refresh token. For more information, refer to https://network.tanzu.vmware.com/docs/api[{partner-registry} API documentation^].
+
+|`TanzuNetRelocateImages`
+|Relocate {partner-product-acronym} images
+|`No`
+|Choose `Yes` to relocate {partner-product-acronym} images from the {partner-registry} registry to your ECR registry. If you do not relocate the images, {partner-product-short-name} uses the {partner-registry} registry to operate.
+
+|`TAPClusterArch`
+|EKS single or multicluster / TAP cluster architecture
+|`single`
+|Choose `multi` to deploy {partner-product-acronym} with multiple EKS clusters.
+|====
+
+[%autowidth.stretch]
+.{partner-product-name} configuration
+|====
+|Parameter |Parameter Label |Default Value |Description
+
+|`TAPDomainName`
+|Domain name
+|
+|Private DNS domain name that will be used for accessing the {partner-product-acronym} graphical user interface (GUI) and project URLs.
+|====
+
+[%autowidth.stretch]
+.Basic configuration
+|====
+|Parameter |Parameter Label |Default Value |Description
+
+|`AvailabilityZones`
+|Availability Zones
+|
+|List of Availability Zones to use for the subnets in the VPC. Three Availability Zones are used for this deployment.
+
+|`NumberOfAZs`
+|Number of Availability Zones
+|`3`
+|Number of Availability Zones to use in the VPC. This must match the value entered for the `AvailabilityZones` parameter.
+
+|`KeyPairName`
+|EC2 key pair name
+|
+|The name of the EC2 key pair used for SSH access to the Linux bastion host/bootstrap instance and EKS cluster nodes, as well as for encrypting the Windows bastion host password. As of June 21, 2022, only RSA key types are supported due to Windows instances not supporting ED25519. For more information, refer to https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-key-pairs.html[Amazon EC2 key pairs and Windows instances^].
+
+|`RemoteAccessCidr`
+|Remote access CIDR
+|
+|IPv4 CIDR block permitted to connect to the Windows and Linux bastion hosts. We recommend that you set this value to a trusted network.
+|====
+
+[%autowidth.stretch]
+.Default VPC configuration
+|====
+|Parameter |Parameter Label |Default Value |Description
+
+|`VPCCIDR`
+|VPC CIDR
+|`10.0.0.0/16`
+|CIDR block for the VPC.
+
+|`PrivateSubnet1CIDR`
+|Private subnet 1 CIDR
+|`10.0.0.0/19`
+|CIDR block for private subnet 1, located in Availability Zone 1.
+
+|`PrivateSubnet2CIDR`
+|Private subnet 2 CIDR
+|`10.0.32.0/19`
+|CIDR block for private subnet 2, located in Availability Zone 2.
+
+|`PrivateSubnet3CIDR`
+|Private subnet 3 CIDR
+|`10.0.64.0/19`
+|CIDR block for private subnet 3, located in Availability Zone 3.
+
+|`PublicSubnet1CIDR`
+|Public subnet 1 CIDR
+|`10.0.128.0/20`
+|CIDR block for the public subnet 1, located in Availability Zone 1.
+
+|`PublicSubnet2CIDR`
+|Public subnet 2 CIDR
+|`10.0.144.0/20`
+|CIDR block for the public subnet 2, located in Availability Zone 2.
+
+|`PublicSubnet3CIDR`
+|Public subnet 3 CIDR
+|`10.0.160.0/20`
+|CIDR block for the public subnet 3, located in Availability Zone 3.
+|====
+
+[%autowidth.stretch]
+.Amazon EKS configuration
+|====
+|Parameter |Parameter Label |Default Value |Description
+
+|`NodeInstanceType`
+|Instance type
+|`m5.xlarge`
+|Amazon EKS cluster node instance type.
+
+|`NodeVolumeSize`
+|Volume size
+|`80`
+|Amazon EBS root volume size for Amazon EKS nodes.
+
+|`NumberOfNodes`
+|Number of nodes
+|`3`
+|Minimum number of nodes to create for each {partner-product-acronym} EKS cluster.
+
+|`MaxNumberOfNodes`
+|Maximum number of nodes
+|`6`
+|Maximum number of available nodes for each {partner-product-acronym} EKS cluster in auto scaling.
+|====
+
+[%autowidth.stretch]
+.AWS Partner Solution S3 bucket configuration
+|====
+|Parameter |Parameter Label |Default Value |Description
+
+|`QSS3BucketName`
+|Name
+|`aws-quickstart`
+|Name of the S3 bucket for your copy of the Partner Solution assets. Keep the default name unless you are customizing the template. Changing the name updates code references to point to a new Partner Solution location. This name can include numbers, lowercase letters, uppercase letters, and hyphens, but do not start or end with a hyphen (-). For more information, refer to https://aws-quickstart.github.io/option1.html.
+
+|`QSS3BucketRegion`
+|Region
+|`us-east-1`
+|AWS Region where the Partner Solution S3 bucket (QSS3BucketName) is hosted. Keep the default Region unless you are customizing the template.  Changing this Region updates code references to point to a new Partner Solution location. When using your own bucket, specify the Region. For more information, refer to https://aws-quickstart.github.io/option1.html.
+
+|`QSS3KeyPrefix`
+|Key prefix
+|`quickstart-vmware-tanzu-application-platform/`
+|S3 key prefix that is used to simulate a directory for your copy of the Partner Solution assets. Keep the default prefix unless you are customizing the template. Changing this prefix updates code references to point to a new Partner Solution location. This prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), and forward slashes (/). End with a forward slash. For more information, refer to https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html and https://aws-quickstart.github.io/option1.html.
+|====
 
 == Postdeployment steps
+
+=== CloudFormation outputs
+
+[%autowidth.stretch]
+.CloudFormation outputs
+|====
+|Key |Description
+
+|`TAPGuiUrl`
+|The {partner-product-short-name} graphical user interface URL. For more information, refer to <<Access the {partner-product-name} user interface>>, later in this guide.
+
+|`LinuxBastionEIP`
+|The Elastic IP address associated with the Amazon EC2 Linux instance.
+
+|`WindowsBastionEIP`
+|The Elastic IP address associated with the Windows bastion host instance.
+
+|`TAPWorkloadUrl`
+|The sample workload URL accessible from the Windows bastion instance.
+|====
+
+=== Security configuration and management tasks
+
+After you successfully deploy this Partner Solution, confirm that your resources and services are updated and configured (including any required patches) to meet your security and other needs. For more information, refer to the https://aws.amazon.com/compliance/shared-responsibility-model/[AWS Shared Responsibility Model^].
+
+=== Access the {partner-product-name} user interface
+
+Access the {partner-product-name} user interface using the Amazon EC2 Windows bastion host instance that is deployed into a public subnet.
+
+To retrieve the password for the Windows bastion host instance, refer to https://aws.amazon.com/premiumsupport/knowledge-center/retrieve-windows-admin-password/[How do I retrieve my Windows administrator password after launching an instance?^] To connect to the bastion host, refer to https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/connecting_to_windows_instance.html[Connect to your Windows instance^].
+
+The {partner-product-name} user interface is not available as a public URL. You can use https://docs.aws.amazon.com/vpn/latest/s2svpn/VPC_VPN.html[Site&#8209;to&#8209;Site VPN^] or https://aws.amazon.com/directconnect/[AWS Direct Connect^] to configure direct access to the VPC from your enterprise network.
+
+To learn more about deploying the first application to {partner-product-name}, visit https://docs.vmware.com/en/VMware-Tanzu-Application-Platform/{partner-product-version-majmin}/tap/getting-started-deploy-first-app.html[the how-to guides for developers].

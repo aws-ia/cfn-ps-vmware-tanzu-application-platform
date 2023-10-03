@@ -1,3 +1,102 @@
 //Include any predeployment steps here, such as signing up for a Marketplace AMI or making any changes to a partner account. If there are no predeployment steps, leave this file empty.
 
 == Predeployment steps
+
+Before you launch the Partner Solution, review the following information and ensure that your account is properly configured. Otherwise, the deployment might fail.
+
+=== Create an RSA key pair
+
+To deploy this Partner Solution, an RSA-type Amazon EC2 key pair is required. To create one, refer to https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html[Create key pairs]. Ensure that you choose `RSA` as the key pair type. For more information, refer to https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-key-pairs.html[Amazon EC2 key pairs and Windows instances^] and link:#_cannot_log_in_to_the_bastion_host[Cannot log in to the bastion host], later in this guide.
+
+=== Resource quotas
+
+If necessary, request https://console.aws.amazon.com/servicequotas/home/[service quota increases^] for the following resources. You might need to request increases if your existing deployment currently uses these resources and if this Partner Solution deployment could result in exceeding the default quotas. The https://console.aws.amazon.com/servicequotas/home/[Service Quotas console^] displays your usage and quotas for some aspects of some services. For more information, refer to https://docs.aws.amazon.com/servicequotas/latest/userguide/intro.html[What is Service Quotas?^] and https://docs.aws.amazon.com/general/latest/gr/aws_service_limits.html[AWS service quotas^].
+
+[%autowidth]
+|====
+|Resource |This deployment uses
+
+|VPCs
+|1
+
+|Subnets
+|6
+
+|Security groups
+|2
+
+|Internet gateways
+|1
+
+|NAT gateways
+|3
+
+|Amazon ECR repositories
+|5
+
+|Amazon EKS clusters
+|1, 4 (multicluster)
+
+|EKS nodes (min/desired/max)
+|single cluster:3/3/6 multicluster:12/12/24
+
+|Secrets Manager secrets
+|1
+
+|EC2 instance (m5.xlarge)
+|1
+
+|EC2 instance (t3.medium)
+|1
+
+|Route 53 private hosted zones
+|1
+
+|Elastic IP
+|5
+|====
+
+=== {partner-registry} account
+
+This Partner Solution requires a {partner-registry} account with a username, password, and a https://network.tanzu.vmware.com/docs/api[user account and authentication (UAA) refresh API token^].
+
+==== Create a new {partner-registry} login
+
+Complete the following steps to create a {partner-registry} login.
+
+. Navigate to https://network.tanzu.vmware.com/.
+. Choose *Sign In*.
+. Choose *Create account*.
+. On the *Create your {partner-company-short-name} account* page, complete the form, and choose *Sign Up*.
+. Log in to {partner-company-short-name} using the new user credentials.
+
+==== Generate a {partner-registry} API token
+
+This Partner Solution requires an API token from the {partner-registry} site to download the packages required to install {partner-product-short-name}.
+
+. Log in to https://network.tanzu.vmware.com/[{partner-registry}^].
+. Choose *Edit Profile* from the dropdown list next to your username.
+. Choose *Request new refresh token*.
+. Copy the refresh token. Enter it for the `API Token` (`TanzuApiToken`) parameter during deployment.
+
+=== Accept {partner-company-short-name} EULAs
+
+Before deploying this Partner Solution, you must accept the following {partner-company-short-name} End User License Agreements (EULAs) for the {partner-registry} account used for the deployment. For more information, refer to https://docs.vmware.com/en/VMware-Tanzu-Application-Platform/{partner-product-version-majmin}/tap/install-tanzu-cli.html#accept-the-end-user-license-agreements-0[Accept the End User License Agreements^].
+
+[IMPORTANT]
+====
+Failure to accept the EULAs before deployment will result in the failure of the {partner-product-short-name} installation.
+====
+
+=== {partner-company-short-name} Customer Experience Improvement Program (CEIP)
+
+{partner-product-name} participates in the https://www.vmware.com/solutions/trustvmware/ceip.html[{partner-company-short-name} CEIP^]. As part of CEIP, {partner-company-short-name} collects technical information about your organization's use of {partner-company-short-name} products and services in association with your organization's {partner-company-short-name} license keys.
+
+You may join or leave CEIP at any time. The CEIP Standard Participation Level provides {partner-company-short-name} with information to improve its products and services, identify and fix problems, and advise you on how to best deploy and use {partner-company-short-name} products. For example, this information can enable a proactive product deployment discussion with your {partner-company-short-name} account team or {partner-company-short-name} support team to help resolve your issues. This information cannot directly identify any individual.
+
+[IMPORTANT]
+====
+You must acknowledge that you have read the {partner-company-short-name} CEIP policy before you can proceed with the installation.
+====
+
+To opt out of telemetry reporting after installation completes, refer to https://docs.vmware.com/en/VMware-Tanzu-Application-Platform/{partner-product-version-majmin}/tap/opting-out-telemetry.html[Opting out of telemetry collection^].

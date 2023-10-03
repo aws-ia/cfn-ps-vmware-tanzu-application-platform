@@ -1,0 +1,679 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  AWS CloudFormation template for deploying VMware Tanzu Application Platform
+  (TAP) on Amazon EKS in a new VPC.
+  **WARNING** This template creates AWS resources. You will be billed for the
+  AWS resources used if you create a stack from this template. (qs-1t1t2psqo)
+Metadata:
+  LICENSE: Apache License, Version 2.0
+  QuickStartDocumentation:
+    EntrypointName: Launch into a new VPC
+    Order: 1
+  SentenceCaseExclude:
+    - Application
+    - Bootstrap
+    - Build
+    - Cluster
+    - Essentials
+    - Network
+    - Platform
+    - Service
+    - Stacks
+    - Tanzu
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: VMware Tanzu Network configuration
+        Parameters:
+          - AcceptEULAs
+          - AcceptCEIP
+          - TanzuNetUsername
+          - TanzuNetPassword
+          - TanzuNetApiToken
+          - TanzuNetRelocateImages
+      - Label:
+          default: VMware Tanzu Application Platform configuration
+        Parameters:
+          - TAPDomainName
+          - TAPClusterArch
+      - Label:
+          default: Basic configuration
+        Parameters:
+          - AvailabilityZones
+          - NumberOfAZs
+          - KeyPairName
+          - RemoteAccessCidr
+      - Label:
+          default: VPC network configuration
+        Parameters:
+          - VPCCIDR
+          - PrivateSubnet1CIDR
+          - PrivateSubnet2CIDR
+          - PrivateSubnet3CIDR
+          - PublicSubnet1CIDR
+          - PublicSubnet2CIDR
+          - PublicSubnet3CIDR
+      - Label:
+          default: Amazon EKS configuration
+        Parameters:
+          - NodeInstanceType
+          - NodeVolumeSize
+          - NumberOfNodes
+          - MaxNumberOfNodes
+      - Label:
+          default: AWS Quick Start S3 bucket configuration
+        Parameters:
+          - QSS3BucketName
+          - QSS3BucketRegion
+          - QSS3KeyPrefix
+    ParameterLabels:
+      AcceptEULAs:
+        default: Have you read and accepted all applicable VMware Tanzu Network EULAs?
+      AcceptCEIP:
+        default: Have you already read and accepted the VMware CEIP policy?
+      AvailabilityZones:
+        default: Availability Zones
+      NumberOfAZs:
+        default: Number of Availability Zones
+      KeyPairName:
+        default: EC2 key pair name
+      VPCCIDR:
+        default: VPC CIDR
+      PrivateSubnet1CIDR:
+        default: Private subnet 1 CIDR
+      PrivateSubnet2CIDR:
+        default: Private subnet 2 CIDR
+      PrivateSubnet3CIDR:
+        default: Private subnet 3 CIDR
+      PublicSubnet1CIDR:
+        default: Public subnet 1 CIDR
+      PublicSubnet2CIDR:
+        default: Public subnet 2 CIDR
+      PublicSubnet3CIDR:
+        default: Public subnet 3 CIDR
+      RemoteAccessCidr:
+        default: Remote access CIDR
+      TAPDomainName:
+        default: Domain name
+      TAPClusterArch:
+        default: EKS single or multi cluster
+      NodeInstanceType:
+        default: Instance type
+      NodeVolumeSize:
+        default: Volume size
+      NumberOfNodes:
+        default: Number of nodes
+      MaxNumberOfNodes:
+        default: Maximum number of nodes
+      TanzuNetUsername:
+        default: Username
+      TanzuNetPassword:
+        default: Password
+      TanzuNetApiToken:
+        default: API token
+      TanzuNetRelocateImages:
+        default: Relocate TAP images
+      QSS3BucketName:
+        default: Name
+      QSS3BucketRegion:
+        default: Region
+      QSS3KeyPrefix:
+        default: Key prefix
+Parameters:
+  AcceptEULAs:
+    Type: String
+    Description: >-
+      Choose Yes if you have already accepted the
+      Cluster Essentials for VMware Tanzu
+      (https://network.tanzu.vmware.com/products/tanzu-cluster-essentials/)
+      and VMware Tanzu Application Platform
+      (https://network.tanzu.vmware.com/products/tanzu-application-platform/)
+      end-user license agreements (EULAs). TAP will fail to install
+      successfully if both EULAs have not been accepted for the specified
+      VMware Tanzu Network user account.
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'No'
+  AcceptCEIP:
+    Type: String
+    Description: >-
+      Choose Yes if you have read and accepted the VMware customer experience
+      improvement program (CEIP) policy
+      (https://www.vmware.com/solutions/trustvmware/ceip.html).
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'No'
+  TAPDomainName:
+    Type: String
+    Description: >-
+      Private DNS domain name for accessing the TAP graphical user interface
+      (GUI) and project URLs.
+    AllowedPattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$  #! from cnrs
+  TAPClusterArch:
+    Type: String
+    Description: TAP cluster architecture.
+    AllowedValues:
+      - multi
+      - single
+    Default: single
+  NumberOfAZs:
+    Type: String
+    Description: >-
+      Number of Availability Zones to use in the VPC. This must match the value
+      entered for the AvailabilityZones parameter.
+    AllowedValues: [2, 3]
+    Default: 3
+  AvailabilityZones:
+    Type: List<AWS::EC2::AvailabilityZone::Name>
+    Description: >-
+      List of Availability Zones to use for the subnets in the VPC. Three
+      Availability Zones are used for this deployment.
+  VPCCIDR:
+    Type: String
+    Description: CIDR block for the VPC.
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Default: 10.0.0.0/16
+  PrivateSubnet1CIDR:
+    Type: String
+    Description: >-
+      CIDR block for private subnet 1, located in Availability Zone 1.
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Default: 10.0.0.0/19
+  PrivateSubnet2CIDR:
+    Type: String
+    Description: >-
+      CIDR block for private subnet 2, located in Availability Zone 2.
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
+    ConstraintDescription: >-
+      CIDR block parameter must be in the form x.x.x.x/16-28.
+    Default: 10.0.32.0/19
+  PrivateSubnet3CIDR:
+    Type: String
+    Description: >-
+      CIDR block for private subnet 3, located in Availability Zone 3.
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
+    ConstraintDescription: >-
+      CIDR block parameter must be in the form x.x.x.x/16-28.
+    Default: 10.0.64.0/19
+  PublicSubnet1CIDR:
+    Type: String
+    Description: >-
+      CIDR block for the public subnet 1, located in Availability Zone 1.
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Default: 10.0.128.0/20
+  PublicSubnet2CIDR:
+    Type: String
+    Description: >-
+      CIDR block for the public (DMZ) subnet 2, located in Availability Zone 2.
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
+    ConstraintDescription: >-
+      CIDR block parameter must be in the form x.x.x.x/16-28.
+    Default: 10.0.144.0/20
+  PublicSubnet3CIDR:
+    Type: String
+    Description: >-
+      CIDR block for the public subnet 3, located in Availability Zone 3.
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
+    ConstraintDescription: >-
+      CIDR block parameter must be in the form x.x.x.x/16-28.
+    Default: 10.0.160.0/20
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: >-
+      The name of the EC2 key pair used for SSH access to the Linux bastion
+      host / bootstrap instance and EKS cluster nodes, and for encrypting the
+      Windows bastion host password. As of June 21, 2022, only RSA key types
+      are supported due to Windows instances not supporting ED25519. For more
+      information, refer to Amazon EC2 key pairs and Windows instances
+      (https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-key-pairs.html).
+  NumberOfNodes:
+    Type: Number
+    Description: Minimum number of nodes to create for the TAP EKS cluster.
+    MinValue: 3
+    MaxValue: 450
+    Default: 3
+  MaxNumberOfNodes:
+    Type: Number
+    Description: >-
+      Maximum number of available nodes for the TAP EKS cluster in auto
+      scaling.
+    MinValue: 4
+    MaxValue: 450
+    Default: 6
+  NodeInstanceType:
+    Type: String
+    Description: Amazon EKS cluster node instance type.
+    AllowedValues:
+      - c4.4xlarge
+      - c4.8xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
+      - c5.12xlarge
+      - c5.18xlarge
+      - c5.24xlarge
+      - c5.metal
+      - c5a.2xlarge
+      - c5a.4xlarge
+      - c5a.8xlarge
+      - c5a.12xlarge
+      - c5a.16xlarge
+      - c5a.24xlarge
+      - c5ad.2xlarge
+      - c5ad.4xlarge
+      - c5ad.8xlarge
+      - c5ad.12xlarge
+      - c5ad.16xlarge
+      - c5ad.24xlarge
+      - c5d.2xlarge
+      - c5d.4xlarge
+      - c5d.9xlarge
+      - c5d.12xlarge
+      - c5d.18xlarge
+      - c5d.24xlarge
+      - c5d.metal
+      - c5n.2xlarge
+      - c5n.4xlarge
+      - c5n.9xlarge
+      - c5n.18xlarge
+      - c5n.metal
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+      - f1.2xlarge
+      - f1.4xlarge
+      - f1.16xlarge
+      - g3.4xlarge
+      - g3.8xlarge
+      - g3.16xlarge
+      - g3s.xlarge
+      - g4dn.xlarge
+      - g4dn.2xlarge
+      - g4dn.4xlarge
+      - g4dn.8xlarge
+      - g4dn.12xlarge
+      - g4dn.16xlarge
+      - g4dn.metal
+      - h1.2xlarge
+      - h1.4xlarge
+      - h1.8xlarge
+      - h1.16xlarge
+      - i3.xlarge
+      - i3.2xlarge
+      - i3.4xlarge
+      - i3.8xlarge
+      - i3.16xlarge
+      - i3.metal
+      - i3en.xlarge
+      - i3en.2xlarge
+      - i3en.3xlarge
+      - i3en.6xlarge
+      - i3en.12xlarge
+      - i3en.24xlarge
+      - i3en.metal
+      - inf1.2xlarge
+      - inf1.6xlarge
+      - inf1.24xlarge
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - m4.16xlarge
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.8xlarge
+      - m5.12xlarge
+      - m5.16xlarge
+      - m5.24xlarge
+      - m5.metal
+      - m5a.xlarge
+      - m5a.2xlarge
+      - m5a.4xlarge
+      - m5a.8xlarge
+      - m5a.12xlarge
+      - m5a.16xlarge
+      - m5a.24xlarge
+      - m5ad.xlarge
+      - m5ad.2xlarge
+      - m5ad.4xlarge
+      - m5ad.8xlarge
+      - m5ad.12xlarge
+      - m5ad.16xlarge
+      - m5ad.24xlarge
+      - m5d.xlarge
+      - m5d.2xlarge
+      - m5d.4xlarge
+      - m5d.8xlarge
+      - m5d.12xlarge
+      - m5d.16xlarge
+      - m5d.24xlarge
+      - m5d.metal
+      - m5dn.xlarge
+      - m5dn.2xlarge
+      - m5dn.4xlarge
+      - m5dn.8xlarge
+      - m5dn.12xlarge
+      - m5dn.16xlarge
+      - m5dn.24xlarge
+      - m5n.xlarge
+      - m5n.2xlarge
+      - m5n.4xlarge
+      - m5n.8xlarge
+      - m5n.12xlarge
+      - m5n.16xlarge
+      - m5n.24xlarge
+      - p2.xlarge
+      - p2.8xlarge
+      - p2.16xlarge
+      - p3.2xlarge
+      - p3.8xlarge
+      - p3.16xlarge
+      - p3dn.24xlarge
+      - r4.xlarge
+      - r4.2xlarge
+      - r4.4xlarge
+      - r4.8xlarge
+      - r4.16xlarge
+      - r5.xlarge
+      - r5.2xlarge
+      - r5.4xlarge
+      - r5.8xlarge
+      - r5.12xlarge
+      - r5.16xlarge
+      - r5.24xlarge
+      - r5.metal
+      - r5a.xlarge
+      - r5a.2xlarge
+      - r5a.4xlarge
+      - r5a.8xlarge
+      - r5a.12xlarge
+      - r5a.16xlarge
+      - r5a.24xlarge
+      - r5ad.xlarge
+      - r5ad.2xlarge
+      - r5ad.4xlarge
+      - r5ad.8xlarge
+      - r5ad.12xlarge
+      - r5ad.16xlarge
+      - r5ad.24xlarge
+      - r5d.xlarge
+      - r5d.2xlarge
+      - r5d.4xlarge
+      - r5d.8xlarge
+      - r5d.12xlarge
+      - r5d.16xlarge
+      - r5d.24xlarge
+      - r5d.metal
+      - r5dn.xlarge
+      - r5dn.2xlarge
+      - r5dn.4xlarge
+      - r5dn.8xlarge
+      - r5dn.12xlarge
+      - r5dn.16xlarge
+      - r5dn.24xlarge
+      - r5n.xlarge
+      - r5n.2xlarge
+      - r5n.4xlarge
+      - r5n.8xlarge
+      - r5n.12xlarge
+      - r5n.16xlarge
+      - r5n.24xlarge
+      - t2.xlarge
+      - t2.2xlarge
+      - t3.xlarge
+      - t3.2xlarge
+      - t3a.xlarge
+      - t3a.2xlarge
+      - x1.16xlarge
+      - x1.32xlarge
+      - x1e.xlarge
+      - x1e.2xlarge
+      - x1e.4xlarge
+      - x1e.8xlarge
+      - x1e.16xlarge
+      - x1e.32xlarge
+      - z1d.xlarge
+      - z1d.2xlarge
+      - z1d.3xlarge
+      - z1d.6xlarge
+      - z1d.12xlarge
+      - z1d.metal
+    ConstraintDescription: Must be a supported EC2 instance type.
+    Default: m5.xlarge
+  NodeVolumeSize:
+    Type: Number
+    Description: Amazon EBS root volume size for Amazon EKS nodes.
+    MinValue: 100
+    MaxValue: 16384
+    Default: 100
+  RemoteAccessCidr:
+    Type: String
+    Description: >-
+      IPv4 CIDR block permitted to connect to the Windows and Linux bastion
+      hosts. We recommend that you set this value to a trusted network.
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(3[0-2]|[1-2][0-9]|[0-9]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/0-32
+  TanzuNetUsername:
+    Type: String
+    Description: >-
+      VMware Tanzu Network username. To create an account, sign up at
+      https://network.tanzu.vmware.com.
+    NoEcho: false
+  TanzuNetPassword:
+    Type: String
+    Description: VMware Tanzu Network password.
+    NoEcho: true
+  TanzuNetApiToken:
+    Type: String
+    Description: >-
+      VMware Tanzu Network user account and authentication (UAA) API
+      refresh token. For more information, refer to the
+      VMware Tanzu Network API documentation
+      (https://network.tanzu.vmware.com/docs/api).
+    NoEcho: true
+  TanzuNetRelocateImages:
+    Type: String
+    Description: >-
+      Choose Yes to relocate TAP images from the VMware Tanzu Network registry
+      to your ECR registry from before attempting installation. If you do not
+      relocate images, Tanzu Application Platform will depend directly on the
+      VMware Tanzu Network registry for its continued operation.
+      Relocating images will add approximately 1 hour to deployment time.
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'No'
+  QSS3BucketName:
+    Type: String
+    Description: >-
+      Name of the S3 bucket for your copy of the Quick Start assets. Keep the
+      default name unless you are customizing the template. Changing the name
+      updates code references to point to a new Quick Start location. This name
+      can include numbers, lowercase letters, uppercase letters, and hyphens,
+      but do not start or end with a hyphen (-). For more information, refer to
+      https://aws-quickstart.github.io/option1.html.
+    MinLength: 3
+    MaxLength: 63
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: >-
+      The Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a
+      hyphen (-).
+    Default: aws-ia-us-east-1
+  QSS3KeyPrefix:
+    Type: String
+    Description: >-
+      S3 key prefix that is used to simulate a directory for your copy of the
+      Quick Start assets. Keep the default prefix unless you are customizing
+      the template. Changing this prefix updates code references to point to a
+      new Quick Start location. This prefix can include numbers, lowercase
+      letters, uppercase letters, hyphens (-), and forward slashes (/). End
+      with a forward slash. For more information, refer to
+      https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html and
+      https://aws-quickstart.github.io/option1.html.
+    AllowedPattern: ^([0-9a-zA-Z-.]+/)*$
+    ConstraintDescription:
+      The Quick Start S3 key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slashes (/).
+    Default: cfn-ps-vmware-tanzu-application-platform/
+  QSS3BucketRegion:
+    Type: String
+    Description: >-
+     AWS Region where the Quick Start S3 bucket (QSS3BucketName) is hosted.
+     Keep the default Region unless you are customizing the template. Changing
+     this Region updates code references to point to a new Quick Start
+     location. When using your own bucket, specify the Region. For more
+     information, refer to https://aws-quickstart.github.io/option1.html.
+    Default: us-east-1
+Conditions:
+  3AZDeployment: !Equals [!Ref NumberOfAZs, 3]
+  UsingDefaultBucket: !Equals [!Ref QSS3BucketName, aws-quickstart]
+  CreateMultiCluster: !Equals [!Ref TAPClusterArch, multi]
+  CreateSingleCluster: !Equals [!Ref TAPClusterArch, single]
+Resources:
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub
+        - https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}submodules/cfn-ps-amazon-eks/submodules/cfn-ps-aws-vpc/templates/aws-vpc.template.yaml
+        - S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+          S3Region: !If [UsingDefaultBucket, !Ref AWS::Region, !Ref QSS3BucketRegion]
+      Parameters:
+        AvailabilityZones: !Join [ ',', !Ref 'AvailabilityZones' ]
+        NumberOfAZs: !Ref NumberOfAZs
+        CreateNATGateways: true
+        PrivateSubnet1ACIDR: !Ref PrivateSubnet1CIDR
+        PrivateSubnet2ACIDR: !Ref PrivateSubnet2CIDR
+        PrivateSubnet3ACIDR: !Ref PrivateSubnet3CIDR
+        PrivateSubnetATag2: kubernetes.io/role/internal-elb=
+        PublicSubnet1CIDR: !Ref PublicSubnet1CIDR
+        PublicSubnet2CIDR: !Ref PublicSubnet2CIDR
+        PublicSubnet3CIDR: !Ref PublicSubnet3CIDR
+        PublicSubnetTag2: kubernetes.io/role/elb=
+        VPCCIDR: !Ref VPCCIDR
+  ExistingVpcStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub
+        - https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/aws-tap-entrypoint-existing-vpc.template.yaml
+        - S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+          S3Region: !If [UsingDefaultBucket, !Ref AWS::Region, !Ref QSS3BucketRegion]
+      Parameters:
+        AcceptEULAs: !Ref AcceptEULAs
+        AcceptCEIP: !Ref AcceptCEIP
+        VpcId: !GetAtt VPCStack.Outputs.VPCID
+        PrivateSubnet1Id: !GetAtt VPCStack.Outputs.PrivateSubnet1AID
+        PrivateSubnet2Id: !GetAtt VPCStack.Outputs.PrivateSubnet2AID
+        PrivateSubnet3Id: !If
+          - 3AZDeployment
+          - !GetAtt VPCStack.Outputs.PrivateSubnet3AID
+          - !Ref AWS::NoValue
+        PublicSubnet1Id: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+        RemoteAccessCidr: !Ref RemoteAccessCidr
+        KeyPairName: !Ref KeyPairName
+        NumberOfNodes: !Ref NumberOfNodes
+        MaxNumberOfNodes: !Ref MaxNumberOfNodes
+        NodeInstanceType: !Ref NodeInstanceType
+        NodeVolumeSize: !Ref NodeVolumeSize
+        TAPDomainName: !Ref TAPDomainName
+        TAPClusterArch: !Ref TAPClusterArch
+        TanzuNetUsername: !Ref TanzuNetUsername
+        TanzuNetPassword: !Ref TanzuNetPassword
+        TanzuNetApiToken: !Ref TanzuNetApiToken
+        TanzuNetRelocateImages: !Ref TanzuNetRelocateImages
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3BucketRegion: !Ref QSS3BucketRegion
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+Outputs:
+  ClusterArch:
+    Description: TAP cluster architecture.
+    Value: !Ref TAPClusterArch
+  LinuxBastionEIP:
+    Description: >-
+      The public IP address of the Linux bastion host / bootstrap instance.
+    Value: !GetAtt ExistingVpcStack.Outputs.LinuxBastionEIP
+  UbuntuBastionAZ:
+    Description: >-
+      The Availability Zone that the Linux bastion host / bootstrap instance
+      is deployed in.
+    Value: !GetAtt ExistingVpcStack.Outputs.UbuntuBastionAZ
+  UbuntuBastionId:
+    Description: >-
+      The EC2 instance ID of the Linux bastion host / bootstrap instance.
+    Value: !GetAtt ExistingVpcStack.Outputs.UbuntuBastionId
+  UbuntuBastionPublicDnsName:
+    Description: >-
+      The public DNS name of the Linux bastion host / bootstrap instance.
+    Value: !GetAtt ExistingVpcStack.Outputs.UbuntuBastionPublicDnsName
+  EKSClusterName:
+    Description: The Amazon EKS cluster name.
+    Value: !GetAtt ExistingVpcStack.Outputs.EKSClusterName
+    Condition: CreateSingleCluster
+  ViewEKSClusterName:
+    Description: The TAP View cluster name.
+    Value: !GetAtt ExistingVpcStack.Outputs.ViewEKSClusterName
+    Condition: CreateMultiCluster
+  RunEKSClusterName:
+    Description: The TAP Run cluster name.
+    Value: !GetAtt ExistingVpcStack.Outputs.RunEKSClusterName
+    Condition: CreateMultiCluster
+  BuildEKSClusterName:
+    Description: The TAP Build cluster name.
+    Value: !GetAtt ExistingVpcStack.Outputs.BuildEKSClusterName
+    Condition: CreateMultiCluster
+  IterateEKSClusterName:
+    Description: The TAP Iterate cluster name.
+    Value: !GetAtt ExistingVpcStack.Outputs.IterateEKSClusterName
+    Condition: CreateMultiCluster
+  TAPGuiUrl:
+    Description: >-
+      The URL of the VMware Tanzu Application Platform GUI that is accessible
+      from within the VPC, such as the Windows bastion instance.
+    Value: !GetAtt ExistingVpcStack.Outputs.TAPGuiUrl
+  TAPWorkloadUrl:
+    Description: >-
+      The URL of the VMware Tanzu Application Platform sample workload that is
+      accessible from within the VPC, such as the Windows bastion instance.
+    Value: !GetAtt ExistingVpcStack.Outputs.TAPWorkloadUrl
+  WindowsBastionAZ:
+    Description: >-
+      The Availability Zone that the Windows bastion instance is deployed in.
+    Value: !GetAtt ExistingVpcStack.Outputs.WindowsBastionAZ
+  WindowsBastionId:
+    Description: The instance ID of the Windows bastion instance.
+    Value: !GetAtt ExistingVpcStack.Outputs.WindowsBastionId
+  WindowsBastionEIP:
+    Description: The public IP address of the Windows bastion instance.
+    Value: !GetAtt ExistingVpcStack.Outputs.WindowsBastionEIP
+  WindowsBastionPublicDnsName:
+    Description: The public DNS name of the Windows bastion instance.
+    Value: !GetAtt ExistingVpcStack.Outputs.WindowsBastionPublicDnsName
+  TAPLogGroup:
+    Description: >-
+      The Amazon CloudWatch Logs log group where the Tanzu Application Platform
+      bootstrap logs are stored.
+    Value: !GetAtt ExistingVpcStack.Outputs.TAPLogGroup
+  Postdeployment:
+    Description: See the deployment guide for postdeployment steps.
+    Value: https://fwd.aws/gDY8k?
+Rules:
+  AcceptEULAs:
+    Assertions:
+      - Assert: !Equals [!Ref AcceptEULAs, 'Yes']
+        AssertDescription: >-
+          You must agree to all of the applicable VMware Tanzu Network
+          end-user license agreements (EULAs) before proceeding.
+  AcceptCEIP:
+    Assertions:
+      - Assert: !Equals [!Ref AcceptCEIP, 'Yes']
+        AssertDescription: >-
+          You must acknowledge that you have read and accepted the VMware
+          Customer Experience Improvement Program (CEIP) policy before you can
+          proceed with the installation.
