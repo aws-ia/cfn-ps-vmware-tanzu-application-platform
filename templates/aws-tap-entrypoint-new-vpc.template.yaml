@@ -506,7 +506,7 @@ Parameters:
       The Quick Start bucket name can include numbers, lowercase
       letters, uppercase letters, and hyphens (-). It cannot start or end with a
       hyphen (-).
-    Default: aws-ia-us-east-1
+    Default: aws-ia
   QSS3KeyPrefix:
     Type: String
     Description: >-
@@ -534,7 +534,7 @@ Parameters:
     Default: us-east-1
 Conditions:
   3AZDeployment: !Equals [!Ref NumberOfAZs, 3]
-  UsingDefaultBucket: !Equals [!Ref QSS3BucketName, aws-quickstart]
+  UsingDefaultBucket: !Equals [!Ref QSS3BucketName, aws-ia]
   CreateMultiCluster: !Equals [!Ref TAPClusterArch, multi]
   CreateSingleCluster: !Equals [!Ref TAPClusterArch, single]
 Resources:
