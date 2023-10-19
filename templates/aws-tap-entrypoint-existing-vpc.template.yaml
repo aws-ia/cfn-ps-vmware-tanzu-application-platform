@@ -457,7 +457,7 @@ Parameters:
       The Quick Start bucket name can include numbers, lowercase letters,
       uppercase letters, and hyphens (-). It cannot start or end with a hyphen
       (-).
-    Default: aws-ia-us-east-1
+    Default: aws-ia
   QSS3KeyPrefix:
     Type: String
     Description: >-
@@ -645,7 +645,7 @@ Conditions:
   # TODO: Finish building logic to only deploy ECR-related resources if when
   # necessary.
   # UseEcr: !Equals [!Ref TanzuNetRelocateImages, 'Yes']
-  UsingDefaultBucket: !Equals [!Ref QSS3BucketName, aws-quickstart]
+  UsingDefaultBucket: !Equals [!Ref QSS3BucketName, aws-ia]
 Resources:
   TanzuNetSecretCredentials:
     Type: AWS::SecretsManager::Secret
